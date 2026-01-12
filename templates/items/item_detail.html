@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Купить {{ item.name }}</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        .stripe-button {
+            background: linear-gradient(135deg, #6772e5 0%, #5469d4 100%);
+            transition: all 0.3s ease;
+        }
+        .stripe-button:hover {
+            background: linear-gradient(135deg, #5469d4 0%, #4557c4 100%);
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(86, 105, 212, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg flex items-center justify-center p-4">
+    <div class="max-w-4xl w-full">
+        <div class="mb-8">
+            <a href="{% url 'index' %}" class="inline-flex items-center text-white hover:text-gray-200 mb-4">
+                <i class="fas fa-arrow-left mr-2"></i> На главную
+            </a>
+            <a href="{% url 'item_list' %}" class="inline-flex items-center text-white hover:text-gray-200 ml-6">
+                <i class="fas fa-store mr-2"></i> Все товары
+            </a>
+        </div>
+
+        <div class="bg-white rounded-2xl overflow-hidden card-hover">
+            <div class="h-64 bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center">
+                <i class="fas fa-shopping-bag text-white text-8xl opacity-50"></i>
+            </div>
+            <div class="p-8">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ item.name }}</h1>
+                        <div class="flex items-center text-gray-600 mb-4">
+                            <i class="fas fa-tag mr-2"></i>
+                            <span>Товар #{{ item.id }}</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-4xl font-bold text-green-600 mb-1">${{ item.price }}</div>
+                        <div class="text-gray-500 text-sm">цена за единицу</div>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3 flex items-center">
+                        <i class="fas fa-info-circle text-blue-500 mr-2"></i> Описание
+                    </h3>
+                    <p class="text-gray-600 text-lg leading-relaxed bg-gray-50 p-4 rounded-lg">
+                        {{ item.description }}
+                    </p>
+                </div>
+
+                <div class="text-center">
+                    <button id="buy-button" class="stripe-button text-white font-bold py-5 px-12 rounded-full text-xl w-full md:w-auto">
+                        <div class="flex items-center justify-center">
+                            <i class="fas fa-lock mr-3"></i>
+                            <span>Купить сейчас за ${{ item.price }}</span>
+                            <i class="fas fa-arrow-right ml-3"></i>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 text-white text-center">
+            <p class="opacity-80">
+                <i class="fas fa-code mr-2"></i>
+                Демонстрация интеграции Django с Stripe API
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const stripe = Stripe('{{ stripe_public_key }}');
+        const buyButton = document.getElementById('buy-button');
+
+        buyButton.addEventListener('click', function() {
+            // Анимация загрузки
+            buyButton.innerHTML = `
+                <div class="flex items-center justify-center">
+                    <i class="fas fa-spinner fa-spin mr-3"></i>
+                    <span>Обработка платежа...</span>
+                </div>
+            `;
+            buyButton.disabled = true;
+            buyButton.classList.remove('stripe-button');
+            buyButton.classList.add('bg-gray-400');
+
+            fetch('/buy/{{ item.id }}/', { method: 'GET' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.id) {
+                    // Редирект на Stripe Checkout
+                    return stripe.redirectToCheckout({ sessionId: data.id });
+                } else {
+                    // Показываем ошибку
+                    showError(data.error || 'Неизвестная ошибка');
+                }
+            })
+            .then(result => {
+                if (result && result.error) {
+                    showError(result.error.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showError('Произошла ошибка. Пожалуйста, попробуйте снова.');
+            });
+
+            function showError(message) {
+                // Восстанавливаем кнопку
+                buyButton.innerHTML = `
+                    <div class="flex items-center justify-center">
+                        <i class="fas fa-lock mr-3"></i>
+                        <span>Купить сейчас за ${{ item.price }}</span>
+                        <i class="fas fa-arrow-right ml-3"></i>
+                    </div>
+                `;
+                buyButton.disabled = false;
+                buyButton.classList.add('stripe-button');
+                buyButton.classList.remove('bg-gray-400');
+
+                // Показываем ошибку
+                alert('Ошибка: ' + message);
+            }
+        });
+    </script>
+</body>
+</html>

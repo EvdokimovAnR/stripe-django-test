@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создать заказ • Магазин</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .item-card {
+            transition: all 0.3s ease;
+            border: 2px solid #e5e7eb;
+            position: relative;
+            overflow: hidden;
+        }
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
+        }
+        .item-card.selected {
+            border-color: #10b981;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
+        }
+        .item-card.selected::before {
+            content: '✓ Выбрано';
+            position: absolute;
+            top: 10px;
+            right: -30px;
+            background: #10b981;
+            color: white;
+            padding: 4px 40px;
+            transform: rotate(45deg);
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .checkbox-custom {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            display: inline-block;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .checkbox-custom.checked {
+            background: #10b981;
+            border-color: #10b981;
+        }
+        .checkbox-custom.checked::after {
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .price-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .summary-card {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid #0ea5e9;
+        }
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+        }
+        .submit-btn:disabled {
+            background: linear-gradient(135deg, #cbd5e0 0%, #94a3b8 100%);
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="gradient-header text-white">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex justify-between items-center mb-4">
+                <a href="{% url 'index' %}" class="inline-flex items-center text-white hover:text-gray-200">
+                    <i class="fas fa-home mr-2"></i> Главная
+                </a>
+                <div class="text-right">
+                    <div class="text-sm opacity-80">Создание заказа</div>
+                    <div class="font-bold">Выберите товары</div>
+                </div>
+            </div>
+
+            <h1 class="text-3xl md:text-4xl font-bold mb-3">🛒 Создать новый заказ</h1>
+            <p class="text-lg opacity-90">
+                Выберите товары галочками. Каждый выбранный товар будет добавлен в заказ <strong>по 1 штуке</strong>.
+            </p>
+        </div>
+    </div>
+
+
+    <main class="container mx-auto px-4 py-8 max-w-4xl">
+        {% if error %}
+        <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+            <div class="flex items-center">
+                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-exclamation-triangle text-red-600"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-red-800">Ошибка</h3>
+                    <p class="text-red-600">{{ error }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <div class="flex items-start">
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                    <i class="fas fa-info-circle text-blue-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-2">Как создать заказ</h3>
+                    <ul class="text-gray-600 space-y-1">
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                            Выберите товары, нажав на карточку товара
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                            Каждый выбранный товар добавляется по 1 штуке
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                            Система автоматически подсчитает общую сумму
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                            Нажмите "Создать заказ" для перехода к оплате
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" id="order-form">
+            {% csrf_token %}
+
+            <div id="order-summary" class="summary-card rounded-xl p-6 mb-8 hidden">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-4 md:mb-0">
+                        <h3 class="text-xl font-bold text-gray-800 mb-1">📦 Итоги заказа</h3>
+                        <p class="text-gray-600">
+                            <span id="selected-count">0</span> товаров на сумму
+                            <span id="total-amount" class="font-bold text-green-600">$0.00</span>
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl font-bold text-blue-600" id="total-price">$0.00</div>
+                        <div class="text-gray-500 text-sm">Итого к оплате</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-6 mb-8">
+                {% for item in items %}
+                <div class="item-card bg-white rounded-xl p-6 cursor-pointer"
+                     data-item-id="{{ item.id }}"
+                     data-item-price="{{ item.price }}"
+                     onclick="toggleItem(this, {{ item.id }}, {{ item.price }})">
+
+                    <div class="flex items-start">
+                        <div class="checkbox-custom mr-4 mt-1" id="checkbox-{{ item.id }}"></div>
+
+                        <div class="w-20 h-20 bg-gradient-to-r from-blue-300 to-purple-300 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                            <i class="fas fa-box text-white text-3xl opacity-80"></i>
+                        </div>
+
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-800">{{ item.name }}</h3>
+                                    <div class="flex items-center text-gray-500 text-sm mt-1">
+                                        <i class="fas fa-hashtag mr-1"></i>
+                                        <span>ID: {{ item.id }}</span>
+                                    </div>
+                                </div>
+                                <div class="price-badge">${{ item.price }}</div>
+                            </div>
+
+                            <p class="text-gray-600">{{ item.description }}</p>
+
+                            <input type="checkbox"
+                                   name="items"
+                                   value="{{ item.id }}"
+                                   id="input-{{ item.id }}"
+                                   class="hidden"
+                                   onchange="updateHiddenCheckbox(this)">
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-12 bg-white rounded-xl">
+                    <i class="fas fa-box-open text-6xl text-gray-400 mb-4"></i>
+                    <h3 class="text-2xl font-bold text-gray-600 mb-2">Товаров пока нет</h3>
+                    <p class="text-gray-500">Добавьте товары через панель администратора</p>
+                    <a href="/admin/items/item/add/" target="_blank" class="inline-block mt-4 text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-plus-circle mr-2"></i> Добавить товар
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+
+
+            <div class="text-center">
+                <button type="submit"
+                        id="submit-btn"
+                        disabled
+                        class="submit-btn text-white font-bold py-5 px-12 rounded-full text-xl w-full md:w-auto">
+                    <div class="flex items-center justify-center">
+                        <i class="fas fa-shopping-cart mr-3 text-xl"></i>
+                        <span id="submit-text">Выберите хотя бы один товар</span>
+                        <i class="fas fa-arrow-right ml-3 text-xl"></i>
+                    </div>
+                </button>
+
+                <p class="text-gray-500 text-sm mt-4 flex items-center justify-center">
+                    <i class="fas fa-lock mr-2"></i>
+                    Безопасная оплата через Stripe • Без комиссий
+                </p>
+            </div>
+        </form>
+
+        <div class="mt-12 flex justify-between">
+            <a href="{% url 'item_list' %}" class="text-blue-600 hover:text-blue-800 font-semibold flex items-center">
+                <i class="fas fa-arrow-left mr-2"></i> Вернуться в магазин
+            </a>
+            <a href="{% url 'index' %}" class="text-gray-600 hover:text-gray-800 font-semibold flex items-center">
+                <i class="fas fa-home mr-2"></i> На главную
+            </a>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p class="mb-2">
+                <i class="fas fa-code mr-2"></i> Тестовое задание: Django Stripe Integration
+            </p>
+            <p class="text-gray-400 text-sm">
+                Демонстрация создания заказа из нескольких товаров
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        let selectedItems = new Map(); // itemId -> price
+
+        function toggleItem(element, itemId, price) {
+            const checkbox = document.getElementById(`checkbox-${itemId}`);
+            const hiddenCheckbox = document.getElementById(`input-${itemId}`);
+
+            if (selectedItems.has(itemId)) {
+                // Удалить из выбранных
+                selectedItems.delete(itemId);
+                element.classList.remove('selected');
+                checkbox.classList.remove('checked');
+                hiddenCheckbox.checked = false;
+            } else {
+                // Добавить в выбранных
+                selectedItems.set(itemId, price);
+                element.classList.add('selected');
+                checkbox.classList.add('checked');
+                hiddenCheckbox.checked = true;
+            }
+
+            updateSummary();
+            event.stopPropagation();
+        }
+
+        function updateHiddenCheckbox(checkbox) {
+            const itemId = checkbox.value;
+            const element = document.querySelector(`[data-item-id="${itemId}"]`);
+            const customCheckbox = document.getElementById(`checkbox-${itemId}`);
+            const price = parseFloat(element.dataset.itemPrice);
+
+            if (checkbox.checked) {
+                selectedItems.set(parseInt(itemId), price);
+                element.classList.add('selected');
+                customCheckbox.classList.add('checked');
+            } else {
+                selectedItems.delete(parseInt(itemId));
+                element.classList.remove('selected');
+                customCheckbox.classList.remove('checked');
+            }
+
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const count = selectedItems.size;
+            let total = 0;
+
+            for (const price of selectedItems.values()) {
+                total += price;
+            }
+
+            // Обновляем отображение
+            document.getElementById('selected-count').textContent = count;
+            document.getElementById('total-amount').textContent = `$${total.toFixed(2)}`;
+            document.getElementById('total-price').textContent = `$${total.toFixed(2)}`;
+
+            const summaryCard = document.getElementById('order-summary');
+            if (count > 0) {
+                summaryCard.classList.remove('hidden');
+            } else {
+                summaryCard.classList.add('hidden');
+            }
+
+            const button = document.getElementById('submit-btn');
+            const submitText = document.getElementById('submit-text');
+
+            if (count > 0) {
+                button.disabled = false;
+                submitText.textContent = `Создать заказ (${count} товаров) за $${total.toFixed(2)}`;
+            } else {
+                button.disabled = true;
+                submitText.textContent = 'Выберите хотя бы один товар';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Обработка отправки формы
+            document.getElementById('order-form').addEventListener('submit', function(e) {
+                if (selectedItems.size === 0) {
+                    e.preventDefault();
+                    alert('Пожалуйста, выберите хотя бы один товар');
+                    return false;
+                }
+
+                const button = document.getElementById('submit-btn');
+                button.innerHTML = `
+                    <div class="flex items-center justify-center">
+                        <i class="fas fa-spinner fa-spin mr-3 text-xl"></i>
+                        <span>Создание заказа...</span>
+                    </div>
+                `;
+                button.disabled = true;
+            });
+        });
+
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.item-card')) {
+                const itemCard = e.target.closest('.item-card');
+                const itemId = parseInt(itemCard.dataset.itemId);
+                const itemPrice = parseFloat(itemCard.dataset.itemPrice);
+                toggleItem(itemCard, itemId, itemPrice);
+            }
+        });
+    </script>
+</body>
+</html>
