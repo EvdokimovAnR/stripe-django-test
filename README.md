@@ -17,7 +17,15 @@ cp .env.example .env
 # 3. Запустить контейнеры
 docker-compose up --build
 
-# 4. Открыть в браузере
+# 4. Создать администратора для доступа к админ-панели
+# Откройте новый терминал в той же папке и выполните:
+docker-compose exec web python manage.py createsuperuser
+# Следуйте инструкциям в терминале:
+# Username: admin (или любой другой)
+# Email: ваш_email@example.com
+# Password: ваш_пароль
+
+# 5. Открыть в браузере
 #    - Приложение: http://localhost:8000
 #    - Админка: http://localhost:8000/admin
 ```
